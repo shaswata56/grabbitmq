@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/shaswata56/grabbitmq"
 	"github.com/shaswata56/grabbitmq/consumer"
 	"github.com/shaswata56/grabbitmq/helpers"
 	"github.com/shaswata56/grabbitmq/publisher"
@@ -14,6 +15,8 @@ import (
 )
 
 func main() {
+	grabbitmq.SetRabbitMQUri("amqps://username:password@bonobo.rmq.cloudamqp.com/random")
+
 	pub := publisher.GetPublisher()
 	pub.Connect()
 	err := pub.CreateChannel("demoChannel")
