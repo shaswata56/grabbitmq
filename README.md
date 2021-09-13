@@ -1,6 +1,11 @@
 # grabbitmq
 ### A high-level RabbitMQ driver for Golang.
 
+#### Import in your project:
+```sh
+go get github.com/shaswata56/grabbitmq
+````
+
 #### Usage Demo:
 
 ```go
