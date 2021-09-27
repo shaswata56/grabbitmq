@@ -8,7 +8,6 @@ import (
 
 type Operation interface {
 	Connect() error
-	CreateChannel(channelName string) error
 	Publish(blob []byte) error
 	Close()
 }
@@ -21,43 +20,29 @@ func GetPublisher() *Publisher {
 	return &Publisher{}
 }
 
-func (p *Publisher) CreateChannel(channelName string) (err error) {
-	p.Chan, err = p.Conn.Channel()
-	helpers.FailOnError(err, "Failed to open a channel")
-
-	p.Queue, err = p.Chan.QueueDeclare(
-		channelName,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	helpers.FailOnError(err, "Failed to declare a Queue Channel")
-	return err
-}
-
-func (p *Publisher) Publish(blob []byte) (err error) {
+func (p *Publisher) Publish(exchange string, blob []byte) (err error) {
 	err = p.Chan.Publish(
+		exchange,
 		"",
-		p.Queue.Name,
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: "text/plain",
+			ContentType: "application/vnd.masstransit+json",
 			Body:        blob,
 		})
 	return err
 }
 
 func (p *Publisher) Connect() {
-	connString := helpers.GetUriMQ()
 	var err error
+	connString := helpers.GetUriMQ()
 	p.Conn, err = amqp.Dial(connString)
 	helpers.FailOnError(err, "Failed to connect to RabbitMQ instance")
+	p.Chan, err = p.Conn.Channel()
+	helpers.FailOnError(err, "Failed to open a channel")
 }
 
 func (p *Publisher) Close() {
-	p.Chan.Close()
-	p.Conn.Close()
+	_ = p.Chan.Close()
+	_ = p.Conn.Close()
 }

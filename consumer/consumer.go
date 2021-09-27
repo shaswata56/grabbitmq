@@ -7,9 +7,9 @@ import (
 )
 
 type Operation interface {
-	Connect() error
-	CreateChannel(channelName string) error
-	Consume() (<-chan amqp.Delivery, error)
+	Connect()
+	Consume(queue string) (<-chan amqp.Delivery, error)
+	Close()
 }
 
 type Consumer struct {
@@ -20,26 +20,10 @@ func GetConsumer() *Consumer {
 	return &Consumer{}
 }
 
-func (c *Consumer) CreateChannel(channelName string) (err error) {
-	c.Chan, err = c.Conn.Channel()
-	helpers.FailOnError(err, "Failed to open a channel")
-
-	c.Queue, err = c.Chan.QueueDeclare(
-		channelName,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	helpers.FailOnError(err, "Failed to declare a Queue Channel")
-	return err
-}
-
-func (c *Consumer) Consume() (channel <-chan amqp.Delivery, err error) {
+func (c *Consumer) Consume(queue string) (channel <-chan amqp.Delivery, err error) {
 	channel, err = c.Chan.Consume(
-		c.Queue.Name,
-		"",
+		queue,
+		"orbitax-rabbitmq-golang",
 		true,
 		false,
 		false,
@@ -50,13 +34,15 @@ func (c *Consumer) Consume() (channel <-chan amqp.Delivery, err error) {
 }
 
 func (c *Consumer) Connect() {
-	connString := helpers.GetUriMQ()
 	var err error
+	connString := helpers.GetUriMQ()
 	c.Conn, err = amqp.Dial(connString)
 	helpers.FailOnError(err, "Failed to connect to RabbitMQ instance")
+	c.Chan, err = c.Conn.Channel()
+	helpers.FailOnError(err, "Failed to open a channel")
 }
 
 func (c *Consumer) Close() {
-	c.Chan.Close()
-	c.Conn.Close()
+	_ = c.Chan.Close()
+	_ = c.Conn.Close()
 }
